@@ -7,6 +7,7 @@ const compression = require('compression');
 const { default: helmet } = require('helmet');
 const router = require('../routes/mainRoute');
 const errorHandler = require('../middlewares/errorHandler');
+const { mongodbConnect } = require('../databases/mongodb/mongodbConnect');
 const swagger = require('../utils/swagger/swagger');
 const { connectRedis } = require('../databases/redis/redis');
 const cookieParser = require('cookie-parser')
@@ -30,6 +31,7 @@ app.use(helmet())
 app.use(cookieParser())
 app.use(useragent.express())
 //init databases
+mongodbConnect();
 connectRedis();
 mysqlConnect();
 
