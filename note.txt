@@ -1,0 +1,13 @@
+declaration function
+value-return function
+void function
+expression function
+arrow function
+async function
+immediately invoked function expression
+callback function
+higher order function
+stateful function
+closure function
+currying function
+recursive function
