@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const RefreshModel = require('../models/refreshModel');
 
+
 const validateRefreshToken = asyncHandler(async (req, res, next) => {
 
     const cookie = req.cookies.refreshToken;
@@ -32,5 +33,6 @@ const validateRefreshToken = asyncHandler(async (req, res, next) => {
     }
 
 });
-
 module.exports = { validateRefreshToken }
+
+

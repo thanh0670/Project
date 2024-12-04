@@ -16,7 +16,7 @@ const schema = mongoose.Schema({
         required: [true, "please add the user password"]
     },
     account: {
-        type: Number, // Sửa thành Number thay vì String
+        type: String,
         default: 0,
     },
     role: {

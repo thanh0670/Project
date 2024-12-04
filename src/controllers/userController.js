@@ -1,46 +1,62 @@
-const UserModel = require('../models/usermodel')
 const bcrypt = require('bcrypt')
 const asyncHandler = require('express-async-handler')
 const jwt = require('jsonwebtoken')
 const { pushTokenToBlackList } = require('../databases/redis/redis')
 const RefreshModel = require('../models/refreshModel')
+const UserSql = require('../models/userMysqlModel')
 const { DateTime } = require('luxon')
+
 
 //@desc Register User
 //@route POST /api/users/register
 //@access public
 const register = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
+    console.log('Email được nhận:', email);
+
     if (!username || !password || !email) {
         res.status(400);
         throw new Error('dien day du thong tin');
     }
-    const userAvaliable = await UserModel.findOne({ email });
-    if (userAvaliable) {
-        res.status(400);
-        throw new Error('tai khoan da ton tai');
+    try {
+        const userAvaliable = await UserSql.findOne({
+            where: { email }
+        });
+        console.log("Kết quả truy vấn:", userAvaliable);
+
+        if (userAvaliable) {
+            res.status(400);
+            throw new Error('tai khoan da ton tai');
+        }
+    } catch (error) {
+        console.error("Lỗi khi truy vấn cơ sở dữ liệu:", error);
     }
+
+
     const hashedPassword = await bcrypt.hash(password, 10)
     console.log(hashedPassword);
-
-    const user = UserModel.create({
-        email: email,
-        username: username,
-        password: hashedPassword,
-        role: "vip0"
-    });
-    if (user) {
-        res.status(201).json({
-            id: user.id,
-            username: user.usermame,
-            email: user.email,
-            role: user.role,
-            message: "tao tai khoan thanh cong"
-        })
-    }
-    else {
-        res.status(400);
-        throw new Error('tao tai khoan that bai')
+    try {
+        const user = await UserSql.create({
+            email: email,
+            username: username,
+            password: hashedPassword,
+            role: "vip0"
+        });
+        if (user) {
+            res.status(201).json({
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                message: "tao tai khoan thanh cong"
+            })
+        }
+        else {
+            res.status(400);
+            throw new Error('tao tai khoan that bai')
+        }
+    } catch (error) {
+        console.error("Lỗi khi tạo user:", error);
     }
 
 })
@@ -63,7 +79,11 @@ const login = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("All fields are mandatory!");
     }
-    const user = await UserModel.findOne({ email });
+    const user = await UserSql.findOne({
+        where: {
+            email: email
+        }
+    });
     if (user && (await bcrypt.compare(password, user.password))) {
         const accessToken = jwt.sign(
             {
@@ -113,12 +133,13 @@ const login = asyncHandler(async (req, res) => {
         res.cookie('refreshToken', refreshToken, {
             maxAge: 30 * 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: true,
-            sameSite: "None",
+            secure: true, //     true khi có https
+            sameSite: "none",// none khi có https 
             path: "/"
         });
         res.status(200).json({
-            accessToken
+            accessToken,
+            refreshToken
         });
     } else {
         res.status(401);
@@ -135,14 +156,37 @@ const login = asyncHandler(async (req, res) => {
 const logout = asyncHandler(async (req, res) => {
     const { email, token } = req.body;
     const cookie = req.cookies.refreshToken;
-    await pushTokenToBlackList(email, token, 900);
+    try {
+        if (!cookie) {
+            return res.status(400).json({
+                message: "Không có refreshToken trong cookie!",
+            });
+        }
 
-    await RefreshModel.findOneAndDelete({ token: cookie });
+        await pushTokenToBlackList(email, token, 900);
+        await RefreshModel.findOneAndDelete({ token: cookie });
 
-    res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: "Strict" });
-    res.status(200).json({
-        message: "logout successfull"
-    })
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true, //     true khi có https
+            sameSite: "none",// none khi có https 
+            path: "/"
+        });
+
+        if (!req.cookies.refreshToken) {
+            res.status(200).json({
+                message: "logout successfull"
+            });
+        } else {
+            res.status(400)
+            throw new Error("refreshToken Van Ton Tai")
+        }
+    }
+    catch {
+        console.error("Server error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 
 })
 
@@ -162,25 +206,29 @@ const Current = (req, res) => {
 //@desc Refresh User
 //@route POST /api/users/Current
 //@access private
-const refresh = asyncHandler((req, res) => {
-    const accessToken = jwt.sign(
-        {
-            user: {
-                username: req.user.username,
-                email: req.user.email,
-                id: req.user.id,
-                role: req.user.role,
+const refresh = asyncHandler(async (req, res) => {
+    try {
+        const accessToken = jwt.sign(
+            {
+                user: {
+                    username: req.user.username,
+                    email: req.user.email,
+                    id: req.user.id,
+                    role: req.user.role,
+                },
             },
-        }, process.env.JWT_SECRET_KEY,
-        {
-            expiresIn: "15m",
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: "15m" }
+        );
 
-        }
-    );
-    res.status(200).json({
-        accessToken
-    });
-})
+        res.status(200).json({
+            accessToken
+        });
+    } catch (err) {
+        console.error('Error generating access token:', err);
+        res.status(500).json({ message: 'Error generating access token' });
+    }
+});
 
 
 

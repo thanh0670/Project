@@ -1,34 +1,23 @@
-const userModel = require('../models/usermodel');
-const vip = async (req, res) => {
+const asyncHandler = require("express-async-handler");
+const { pushUserToBlackList, isHaveUserInBlacklist } = require('../databases/mongodb/mongodbConnect');
+const UserSql = require('../models/userMysqlModel')
+
+
+const vip = asyncHandler(async (req, res) => {
     const role = req.user.role;
     const userID = req.user.id;
-    const user = await userModel.findById(userID);
-    console.log(role);
+    const user = await UserSql.findByPk(userID);
+
 
     if (user) {
-        if (user.account >= 200) {
-            await userModel.updateOne(
-                { _id: userID },
-                { $set: { role: "vip1" } }
-            );
-        }
-        else if (user.account >= 400) {
-            await userModel.updateOne(
-                { _id: userID },
-                { $set: { role: "vip2" } }
-            );
-        }
-        else if (user.account >= 600) {
-            await userModel.updateOne(
-                { _id: userID },
-                { $set: { role: "vip3" } }
-            );
-        }
-        else if (user.account >= 600) {
-            await userModel.updateOne(
-                { _id: userID },
-                { $set: { role: "vip4" } }
-            );
+        if (user.account >= 600) {
+            await user.update({ role: "vip4" });
+        } else if (user.account >= 400) {
+            await user.update({ role: "vip3" });
+        } else if (user.account >= 200) {
+            await user.update({ role: "vip2" });
+        } else {
+            await user.update({ role: "vip1" });
         }
     }
     else {
@@ -44,6 +33,7 @@ const vip = async (req, res) => {
                 .json({
                     message:
                         "Chào mừng VIP 0! Đây là nội dung đặc biệt dành cho bạn.",
+                    voucher: "0%"
                 });
         case "vip1":
             return res
@@ -75,14 +65,30 @@ const vip = async (req, res) => {
                     message: "Chào mừng VIP 4! Đây là nội dung cao cấp cho bạn.",
                     voucher: "20%"
                 });
+
+
         default:
             return res
                 .status(403)
                 .json({
-                    message: "Không có nội dung phù hợp với quyền của bạn.",
-                    voucher: "25%"
+                    message: "Không có nội dung phù hợp với quyền của bạn."
                 });
     }
-}
+})
+const admin = asyncHandler(async (req, res) => {
+    const { email } = req.body;
 
-module.exports = { vip }
+    if (!email) {
+        return res.status(400).send("Không có email");
+    }
+    const isBlacklisted = await isHaveUserInBlacklist(email);
+    console.log(email);
+
+    if (isBlacklisted) {
+        return res.status(200).send("Tài khoản đã bị cấm trước đó.");
+    }
+    await pushUserToBlackList(email);
+    res.status(200).send(`Tài khoản ${email} đã bị cấm.`);
+});
+
+module.exports = { vip, admin }

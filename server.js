@@ -1,17 +1,16 @@
 const app = require('./src/app/app');
 const port = 8000;
-// const https = require("https");
-// const fs = require("fs");
+const https = require("https");
+const fs = require("fs");
 
-// const options = {
+const options = {
 
-//   key: fs.readFileSync('./key.pem'),
+  key: fs.readFileSync('./key.pem'),
 
-//   cert: fs.readFileSync('./cert.pem'),
+  cert: fs.readFileSync('./cert.pem'),
 
-// };
-// const server = https.createServer(options, app);
-
+};
+const server = https.createServer(options, app);
 
 
 
