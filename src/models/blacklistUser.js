@@ -9,9 +9,8 @@ const schema = mongoose.Schema({
     }
 })
 
-const BlacklistUser = mongoose.model("users", schema);
+module.exports = mongoose.model("blockUsers", schema);
 
-module.exports = BlacklistUser;
 
 
 

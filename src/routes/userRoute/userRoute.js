@@ -8,6 +8,7 @@ const registerRoute = require('./registerRoute/registerRoute');
 const refreshRoute = require('./refreshCurrentRoute/refreshCurrentRoutea')
 const vipRoute = require('./vip_adminRoute/vipRoute')
 const adminRoute = require('./vip_adminRoute/adminRoute')
+const payRoute = require('./payRoute/payRoute')
 
 router.use('/users', loginRoute);
 router.use('/users', currentRoute);
@@ -16,6 +17,8 @@ router.use('/users', registerRoute);
 router.use('/users', refreshRoute);
 router.use('/users', vipRoute);
 router.use('/users', adminRoute);
+router.use('/users', payRoute);
+
 
 
 

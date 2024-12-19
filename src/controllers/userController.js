@@ -6,7 +6,6 @@ const RefreshModel = require('../models/refreshModel')
 const UserSql = require('../models/userMysqlModel')
 const { DateTime } = require('luxon')
 
-
 //@desc Register User
 //@route POST /api/users/register
 //@access public
@@ -20,13 +19,12 @@ const register = asyncHandler(async (req, res) => {
     }
     try {
         const userAvaliable = await UserSql.findOne({
-            where: { email }
+            where: { email: email }
         });
         console.log("Kết quả truy vấn:", userAvaliable);
 
         if (userAvaliable) {
-            res.status(400);
-            throw new Error('tai khoan da ton tai');
+            return res.status(400).json({ message: 'tai khoan da ton tai' });
         }
     } catch (error) {
         console.error("Lỗi khi truy vấn cơ sở dữ liệu:", error);

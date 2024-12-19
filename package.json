@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./server.js",
-    "dev": "nodemon ./server.js"
+    "dev": "nodemon ./server.js",
+    "swaggerGenerate": "node ./scripts/swaggerAutogen.js"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "mysql2": "^3.11.5",
     "redis": "^4.7.0",
     "sequelize": "^6.37.5",
+    "swagger-autogen": "^2.23.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

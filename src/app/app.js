@@ -13,6 +13,7 @@ const { mongodbConnect } = require('../databases/mongodb/mongodbConnect');
 const cookieParser = require('cookie-parser')
 const useragent = require('express-useragent');
 const { sequelizeConnect, sequelizeSync } = require('../databases/mysql/mysqlConnect');
+
 // test
 
 
@@ -47,4 +48,8 @@ app.use('/', swagger);
 app.use(errorHandler);
 
 
+
+
 module.exports = app;
+
+

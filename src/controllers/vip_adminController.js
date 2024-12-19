@@ -1,7 +1,9 @@
 const asyncHandler = require("express-async-handler");
 const { pushUserToBlackList, isHaveUserInBlacklist } = require('../databases/mongodb/mongodbConnect');
 const UserSql = require('../models/userMysqlModel')
-
+const { Op } = require('sequelize')
+const { sequelize } = require('../databases/mysql/mysqlConnect');
+const blacklistUser = require('../models/blacklistUser')
 
 const vip = asyncHandler(async (req, res) => {
     const role = req.user.role;
@@ -75,7 +77,7 @@ const vip = asyncHandler(async (req, res) => {
                 });
     }
 })
-const admin = asyncHandler(async (req, res) => {
+const adminBlock = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -91,4 +93,24 @@ const admin = asyncHandler(async (req, res) => {
     res.status(200).send(`Tài khoản ${email} đã bị cấm.`);
 });
 
-module.exports = { vip, admin }
+const adminUser = asyncHandler(async (req, res) => {
+    console.log("hello");
+    const users = await UserSql.findAll({
+        where: {
+            role: {
+                [Op.ne]: 'admin',
+            },
+        },
+    });
+    const usersBlacklist = await blacklistUser.find();
+    const arrayEmailBlacklist = usersBlacklist.map((item) => item.email);
+    const arrayEmail = users.map((item) => item.dataValues.email);
+    const filteredUsers = users.filter(
+        (user) => !arrayEmailBlacklist.includes(user.dataValues.email)
+    );
+    console.log("email", arrayEmail);
+    console.log("EmailBlacklist", arrayEmailBlacklist);
+    console.log("Filtered Users:", filteredUsers);
+    res.status(200).json(filteredUsers);
+})
+module.exports = { vip, adminBlock, adminUser }
