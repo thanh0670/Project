@@ -1,8 +1,9 @@
 const express = require("express");
-const { pay } = require("../../../controllers/payController");
+const { pay, deleteBill, getBill } = require("../../../controllers/payController");
 const router = express.Router();
 
-router.route('/pay').post(pay);
+
+router.route('/pay').post(pay).get(getBill).delete(deleteBill);
 
 
 

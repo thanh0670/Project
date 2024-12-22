@@ -5,6 +5,7 @@ const { Op } = require('sequelize')
 const { sequelize } = require('../databases/mysql/mysqlConnect');
 const blacklistUser = require('../models/blacklistUser')
 
+
 const vip = asyncHandler(async (req, res) => {
     const role = req.user.role;
     const userID = req.user.id;
@@ -84,7 +85,6 @@ const adminBlock = asyncHandler(async (req, res) => {
         return res.status(400).send("Không có email");
     }
     const isBlacklisted = await isHaveUserInBlacklist(email);
-    console.log(email);
 
     if (isBlacklisted) {
         return res.status(200).send("Tài khoản đã bị cấm trước đó.");
@@ -94,7 +94,6 @@ const adminBlock = asyncHandler(async (req, res) => {
 });
 
 const adminUser = asyncHandler(async (req, res) => {
-    console.log("hello");
     const users = await UserSql.findAll({
         where: {
             role: {
@@ -102,15 +101,43 @@ const adminUser = asyncHandler(async (req, res) => {
             },
         },
     });
-    const usersBlacklist = await blacklistUser.find();
+    const usersBlacklist = await blacklistUser.find({ validateBlock: "yes" });
     const arrayEmailBlacklist = usersBlacklist.map((item) => item.email);
     const arrayEmail = users.map((item) => item.dataValues.email);
     const filteredUsers = users.filter(
         (user) => !arrayEmailBlacklist.includes(user.dataValues.email)
     );
+    const arrayUser = filteredUsers.map((item) => item.email)
+
+
     console.log("email", arrayEmail);
     console.log("EmailBlacklist", arrayEmailBlacklist);
     console.log("Filtered Users:", filteredUsers);
-    res.status(200).json(filteredUsers);
+    res.status(200).json({
+        User: arrayUser,
+        UserBlacklist: arrayEmailBlacklist
+
+    });
 })
-module.exports = { vip, adminBlock, adminUser }
+
+const adminUnblock = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    try {
+        // Tìm email trong danh sách đen
+        const user = await blacklistUser.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "Email không tồn tại trong danh sách đen." });
+        }
+
+        // Cập nhật validateBlock thành "no"
+        user.validateBlock = "no";
+        await user.save();
+
+        res.status(200).json({ message: `Đã gỡ chặn email: ${email}` });
+    } catch (error) {
+        console.error("Error unblocking user:", error);
+        res.status(500).json({ message: "Có lỗi xảy ra." });
+    }
+})
+module.exports = { vip, adminBlock, adminUser, adminUnblock }

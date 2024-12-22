@@ -6,6 +6,10 @@ const schema = mongoose.Schema({
         type: String,
         unique: [true, "email alreaty taken"],
         required: [true, "please add the email address"]
+    },
+    validateBlock: {
+        type: String,
+        default: "yes"
     }
 })
 

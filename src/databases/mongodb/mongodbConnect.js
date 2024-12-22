@@ -13,7 +13,7 @@ const mongodbConnect = async () => {
 
 const isHaveUserInBlacklist = async (email) => {
     try {
-        const user = await BlacklistUser.findOne({ email });
+        const user = await BlacklistUser.findOne({ email, validateBlock: "yes" });
         return !!user; // Trả về true nếu tìm thấy
     } catch (error) {
         console.error("Error checking user in blacklist:", error);
@@ -22,8 +22,18 @@ const isHaveUserInBlacklist = async (email) => {
 };
 const pushUserToBlackList = async (email) => {
     try {
-        await BlacklistUser.create({ email });
-        console.log("User added to blacklist successfully.");
+        const existingUser = await BlacklistUser.findOne({ email, validateBlock: "no" });
+
+        if (existingUser) {
+            // Nếu tìm thấy, cập nhật validateBlock thành "yes"
+            existingUser.validateBlock = "yes";
+            await existingUser.save();
+            console.log(`Updated validateBlock to "yes" for email: ${email}`);
+        } else {
+            // Nếu không tìm thấy, thêm mới
+            await BlacklistUser.create({ email });
+            console.log(`Added email: ${email} to blacklist with default validateBlock: "yes".`);
+        }
     } catch (error) {
         if (error.code === 11000) {
             console.error("Error: Email already exists in blacklist.");
